@@ -1,0 +1,667 @@
+local Players          = game:GetService("Players")
+local TeleportService  = game:GetService("TeleportService")
+local HttpService      = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService     = game:GetService("TweenService")
+local RunService       = game:GetService("RunService")
+local LP               = Players.LocalPlayer
+
+local VP  = workspace.CurrentCamera.ViewportSize
+local SW, SH = VP.X, VP.Y
+local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+local function S(n) return math.floor(n * (IsMobile and (SH<680 and 0.78 or 0.9) or 1)) end
+
+local K = {
+    BG    = Color3.fromRGB(6, 8, 6),
+    BG2   = Color3.fromRGB(10,14,10),
+    Panel = Color3.fromRGB(12,17,12),
+    Card  = Color3.fromRGB(16,22,16),
+    CardH = Color3.fromRGB(20,30,20),
+    Acc   = Color3.fromRGB(0, 255, 100),
+    AccD  = Color3.fromRGB(0, 180, 70),
+    AccDim= Color3.fromRGB(0, 80, 30),
+    Red   = Color3.fromRGB(255, 60, 60),
+    RedD  = Color3.fromRGB(120, 20, 20),
+    Yel   = Color3.fromRGB(220, 200, 0),
+    YelD  = Color3.fromRGB(80, 70, 0),
+    Dim   = Color3.fromRGB(50, 80, 50),
+    Sub   = Color3.fromRGB(70, 110, 70),
+    Text  = Color3.fromRGB(180, 230, 180),
+    White = Color3.fromRGB(220, 255, 220),
+    Line  = Color3.fromRGB(0, 60, 20),
+}
+
+local function Tw(o,p,t,s)
+    TweenService:Create(o,TweenInfo.new(t or .18,s or Enum.EasingStyle.Quart,Enum.EasingDirection.Out),p):Play()
+end
+local function Cr(p,r) local c=Instance.new("UICorner") c.CornerRadius=UDim.new(0,r or 4) c.Parent=p return c end
+local function Sk(p,col,th) local s=Instance.new("UIStroke") s.Color=col s.Thickness=th or 1 s.Parent=p return s end
+local function NewF(par,col,sz,pos,zi)
+    local f=Instance.new("Frame",par)
+    f.BackgroundColor3=col or Color3.new()
+    f.BorderSizePixel=0
+    f.Size=sz or UDim2.new(1,0,1,0)
+    if pos then f.Position=pos end
+    if zi  then f.ZIndex=zi end
+    return f
+end
+local function NewTxt(par,txt,fsz,col,font,xa)
+    local l=Instance.new("TextLabel",par)
+    l.Text=txt l.TextSize=fsz or S(12)
+    l.TextColor3=col or K.Text
+    l.Font=font or Enum.Font.Code
+    l.BackgroundTransparency=1
+    l.Size=UDim2.new(1,0,1,0)
+    l.TextXAlignment=xa or Enum.TextXAlignment.Left
+    l.TextYAlignment=Enum.TextYAlignment.Center
+    return l
+end
+
+if game.CoreGui:FindFirstChild("DeXFix") then game.CoreGui.DeXFix:Destroy() end
+
+local GUI=Instance.new("ScreenGui")
+GUI.Name="DeXFix" GUI.ResetOnSpawn=false
+GUI.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
+GUI.DisplayOrder=9999 GUI.IgnoreGuiInset=true
+GUI.Parent=(pcall(function() return game.CoreGui end) and game.CoreGui) or LP.PlayerGui
+
+local W = math.min(S(390), SW - 20)
+local H = math.min(S(550), SH - (IsMobile and 100 or 30))
+local PX = S(14)
+local HH = S(54)
+
+local Win = NewF(GUI, K.BG, UDim2.new(0,W,0,H), UDim2.new(0.5,-W/2,0.5,-H/2))
+Win.ClipsDescendants = true
+Cr(Win, S(6))
+Sk(Win, K.Acc, 1)
+
+local function ScanLine()
+    local lines = {}
+    for i = 1, 18 do
+        local l = NewF(Win, K.Line,
+            UDim2.new(1,0,0,1),
+            UDim2.new(0,0,0, math.floor((i-1)*(H/18))))
+        l.BackgroundTransparency = 0.88
+        l.ZIndex = 1
+        table.insert(lines, l)
+    end
+end
+ScanLine()
+
+local TopBar = NewF(Win, K.Panel, UDim2.new(1,0,0,HH), UDim2.new(0,0,0,0), 8)
+
+local AccLine = NewF(TopBar, K.Acc, UDim2.new(1,0,0,2), UDim2.new(0,0,0,0), 12)
+local ALG = Instance.new("UIGradient", AccLine)
+ALG.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, K.AccD),
+    ColorSequenceKeypoint.new(0.5, K.Acc),
+    ColorSequenceKeypoint.new(1, K.AccD),
+}
+
+local function Bracket(parent, txt, col, px, sz)
+    local f = NewF(parent, Color3.new(), UDim2.new(0,sz or S(38),1,0), UDim2.new(0,px,0,0), 9)
+    f.BackgroundTransparency = 1
+    local l = NewTxt(f, txt, S(11), col or K.Acc, Enum.Font.Code, Enum.TextXAlignment.Center)
+    l.ZIndex = 10
+    return f
+end
+
+local Tag1 = Bracket(TopBar, "[ DeX", K.AccD, S(10))
+local TitleL = NewF(TopBar, Color3.new(), UDim2.new(0,S(90),0,S(36)), UDim2.new(0,S(42),0.5,-S(18)), 9)
+TitleL.BackgroundTransparency = 1
+
+local TitleTxt = Instance.new("TextLabel", TitleL)
+TitleTxt.Text = "Fix"
+TitleTxt.Size = UDim2.new(1,0,1,0)
+TitleTxt.BackgroundTransparency = 1
+TitleTxt.Font = Enum.Font.GothamBold
+TitleTxt.TextSize = S(24)
+TitleTxt.TextColor3 = K.Acc
+TitleTxt.TextXAlignment = Enum.TextXAlignment.Left
+TitleTxt.ZIndex = 10
+local TG = Instance.new("UIGradient", TitleTxt)
+TG.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, K.White),
+    ColorSequenceKeypoint.new(0.6, K.Acc),
+}
+
+local Tag2 = Bracket(TopBar, "Fix ]", K.AccD, S(128))
+
+local VerBadge = NewF(TopBar, K.AccDim, UDim2.new(0,S(48),0,S(18)), UDim2.new(0,S(180),0.5,-S(9)), 9)
+Cr(VerBadge, S(3)) Sk(VerBadge, K.Acc, 1)
+local VL = NewTxt(VerBadge, "v3.0", S(9), K.Acc, Enum.Font.Code, Enum.TextXAlignment.Center)
+VL.ZIndex = 10
+
+local PulseF = NewF(TopBar, K.AccDim, UDim2.new(0,S(8),0,S(8)), UDim2.new(1,-S(80),0.5,-S(4)), 9)
+Cr(PulseF, S(4)) Sk(PulseF, K.Acc, 1)
+
+local StatTxt = NewTxt(TopBar, "IDLE", S(10), K.Sub, Enum.Font.Code, Enum.TextXAlignment.Right)
+StatTxt.Size = UDim2.new(0,S(56),1,0)
+StatTxt.Position = UDim2.new(1,-S(62),0,0)
+StatTxt.ZIndex = 10
+
+local MinBtn = Instance.new("TextButton", TopBar)
+MinBtn.Text = "[−]"
+MinBtn.Size = UDim2.new(0,S(34),0,S(26))
+MinBtn.Position = UDim2.new(1,-S(38),0.5,-S(13))
+MinBtn.BackgroundTransparency = 1
+MinBtn.TextColor3 = K.Dim
+MinBtn.Font = Enum.Font.Code
+MinBtn.TextSize = S(12)
+MinBtn.BorderSizePixel = 0
+MinBtn.AutoButtonColor = false
+MinBtn.ZIndex = 11
+MinBtn.MouseEnter:Connect(function() MinBtn.TextColor3=K.Red end)
+MinBtn.MouseLeave:Connect(function() MinBtn.TextColor3=K.Dim end)
+
+local function SetStat(txt, col)
+    StatTxt.Text = txt
+    StatTxt.TextColor3 = col or K.Sub
+    PulseF.BackgroundColor3 = col or K.Sub
+end
+
+local DIV1Y = HH
+local function HLine(yy)
+    local l = NewF(Win, K.Line, UDim2.new(1,0,0,1), UDim2.new(0,0,0,yy))
+    local lg = Instance.new("UIGradient",l)
+    lg.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0,Color3.new()),
+        ColorSequenceKeypoint.new(0.3,K.Acc),
+        ColorSequenceKeypoint.new(0.7,K.AccD),
+        ColorSequenceKeypoint.new(1,Color3.new()),
+    }
+    return l
+end
+HLine(DIV1Y)
+
+local FILT_Y = DIV1Y + S(10)
+local FILT_H = S(34)
+
+local FilterRow = NewF(Win, K.Panel,
+    UDim2.new(1,-PX*2,0,FILT_H),
+    UDim2.new(0,PX,0,FILT_Y))
+Cr(FilterRow, S(4)) Sk(FilterRow, K.Line, 1)
+
+local FIconL = NewTxt(FilterRow, "> MAX:", S(10), K.Sub, Enum.Font.Code)
+FIconL.Size = UDim2.new(0,S(54),1,0)
+FIconL.Position = UDim2.new(0,S(8),0,0)
+
+local FilterRight = NewF(FilterRow, Color3.new(), UDim2.new(0,S(200),1,0), UDim2.new(1,-S(206),0,0))
+FilterRight.BackgroundTransparency = 1
+local FBLL = Instance.new("UIListLayout", FilterRight)
+FBLL.FillDirection = Enum.FillDirection.Horizontal
+FBLL.HorizontalAlignment = Enum.HorizontalAlignment.Right
+FBLL.VerticalAlignment = Enum.VerticalAlignment.Center
+FBLL.Padding = UDim.new(0,S(4))
+local FRP = Instance.new("UIPadding",FilterRight)
+FRP.PaddingRight = UDim.new(0,S(6))
+
+local maxP = 5
+local fbtns = {}
+
+local function SetFilter(n)
+    maxP = n
+    for num,btn in pairs(fbtns) do
+        local on = num==n
+        Tw(btn,{BackgroundColor3=on and K.AccDim or K.BG2})
+        btn.TextColor3 = on and K.Acc or K.Sub
+        btn.BorderSizePixel = 0
+    end
+end
+
+for _,n in ipairs({1,2,3,5,10}) do
+    local Btn = Instance.new("TextButton", FilterRight)
+    Btn.Text = tostring(n)
+    Btn.Size = UDim2.new(0,S(30),0,S(22))
+    Btn.BackgroundColor3 = n==maxP and K.AccDim or K.BG2
+    Btn.TextColor3 = n==maxP and K.Acc or K.Sub
+    Btn.Font = Enum.Font.Code
+    Btn.TextSize = S(11)
+    Btn.BorderSizePixel = 0
+    Btn.AutoButtonColor = false
+    Cr(Btn, S(3)) Sk(Btn, K.Line, 1)
+    fbtns[n] = Btn
+    Btn.MouseButton1Click:Connect(function() SetFilter(n) end)
+    Btn.TouchTap:Connect(function() SetFilter(n) end)
+end
+
+local TABS_Y   = FILT_Y + FILT_H + S(8)
+local TAB_H    = S(28)
+local BTN_H    = S(40)
+local BTN_GAP  = S(6)
+local BTNS_TOT = BTN_H*3 + BTN_GAP*2 + S(10)
+local VER_H    = S(16)
+local SCROLL_Y = TABS_Y + TAB_H + S(6)
+local SCROLL_H = H - SCROLL_Y - BTNS_TOT - VER_H - S(8)
+
+HLine(SCROLL_Y + SCROLL_H + S(4))
+
+local TabsRow = NewF(Win, Color3.new(),
+    UDim2.new(1,-PX*2,0,TAB_H),
+    UDim2.new(0,PX,0,TABS_Y))
+TabsRow.BackgroundTransparency = 1
+
+local tabLine = NewF(TabsRow, K.Line, UDim2.new(1,0,0,1), UDim2.new(0,0,1,-1))
+local tabLG = Instance.new("UIGradient", tabLine)
+tabLG.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0,Color3.new()),
+    ColorSequenceKeypoint.new(0.5,K.AccD),
+    ColorSequenceKeypoint.new(1,Color3.new()),
+}
+
+local ResultLbl = NewTxt(TabsRow, "> server_list.txt", S(10), K.Sub, Enum.Font.Code)
+ResultLbl.Size = UDim2.new(0.6,0,1,0)
+
+local CountLbl = NewTxt(TabsRow, "[ 0 found ]", S(10), K.AccD, Enum.Font.Code, Enum.TextXAlignment.Right)
+CountLbl.Size = UDim2.new(0.4,0,1,0)
+CountLbl.Position = UDim2.new(0.6,0,0,0)
+
+local ContentArea = NewF(Win, Color3.new(),
+    UDim2.new(1,-PX*2,0,SCROLL_H),
+    UDim2.new(0,PX,0,SCROLL_Y))
+ContentArea.BackgroundTransparency = 1
+ContentArea.ClipsDescendants = true
+
+local Scroll = Instance.new("ScrollingFrame", ContentArea)
+Scroll.Size = UDim2.new(1,0,1,0)
+Scroll.BackgroundTransparency = 1
+Scroll.BorderSizePixel = 0
+Scroll.ScrollBarThickness = 2
+Scroll.ScrollBarImageColor3 = K.Acc
+Scroll.CanvasSize = UDim2.new(0,0,0,0)
+Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+local SLL = Instance.new("UIListLayout", Scroll)
+SLL.Padding = UDim.new(0,S(5))
+
+local function ShowEmpty(icon, msg)
+    for _,c in pairs(Scroll:GetChildren()) do
+        if c:IsA("Frame") then c:Destroy() end
+    end
+    CountLbl.Text = "[ 0 found ]"
+    local ef = NewF(Scroll, Color3.new(), UDim2.new(1,0,0,SCROLL_H))
+    ef.BackgroundTransparency = 1
+    local ei = NewTxt(ef, icon, S(32), K.AccD, Enum.Font.Gotham, Enum.TextXAlignment.Center)
+    ei.Size=UDim2.new(1,0,0,S(44)) ei.Position=UDim2.new(0,0,0.22,0)
+    local el = NewTxt(ef, msg, S(11), K.Sub, Enum.Font.Code, Enum.TextXAlignment.Center)
+    el.Size=UDim2.new(1,0,0,S(18)) el.Position=UDim2.new(0,0,0.55,0)
+end
+ShowEmpty("//", "run  scan  to  load  servers")
+
+local BAREA_Y = H - BTNS_TOT - VER_H - S(4)
+local BottomArea = NewF(Win, Color3.new(),
+    UDim2.new(1,-PX*2,0,BTNS_TOT),
+    UDim2.new(0,PX,0,BAREA_Y))
+BottomArea.BackgroundTransparency = 1
+
+local function MakeBtn(label, prefix, col, colD, yy)
+    local Btn = Instance.new("TextButton", BottomArea)
+    Btn.Size  = UDim2.new(1,0,0,BTN_H)
+    Btn.Position = UDim2.new(0,0,0,yy)
+    Btn.BackgroundColor3 = colD
+    Btn.Text = ""
+    Btn.BorderSizePixel = 0
+    Btn.AutoButtonColor = false
+    Cr(Btn, S(4)) Sk(Btn, col, 1)
+
+    local Pre = NewTxt(Btn, prefix, S(10), col, Enum.Font.Code)
+    Pre.Size = UDim2.new(0,S(28),1,0)
+    Pre.Position = UDim2.new(0,S(10),0,0)
+    Pre.ZIndex = 5
+
+    local TL = NewTxt(Btn, label, S(12), K.White, Enum.Font.GothamBold)
+    TL.Size = UDim2.new(1,-S(46),1,0)
+    TL.Position = UDim2.new(0,S(38),0,0)
+    TL.ZIndex = 5
+
+    local ArrowL = NewTxt(Btn, "→", S(12), col, Enum.Font.Code, Enum.TextXAlignment.Right)
+    ArrowL.Size = UDim2.new(0,S(24),1,0)
+    ArrowL.Position = UDim2.new(1,-S(28),0,0)
+    ArrowL.ZIndex = 5
+
+    Btn.MouseEnter:Connect(function()
+        Tw(Btn,{BackgroundColor3=col},0.12)
+        TL.TextColor3=K.BG
+        Pre.TextColor3=K.BG
+        ArrowL.TextColor3=K.BG
+    end)
+    Btn.MouseLeave:Connect(function()
+        Tw(Btn,{BackgroundColor3=colD},0.12)
+        TL.TextColor3=K.White
+        Pre.TextColor3=col
+        ArrowL.TextColor3=col
+    end)
+
+    local function tap()
+        Tw(Btn,{BackgroundTransparency=0.35},0.07)
+        task.delay(0.12,function() Tw(Btn,{BackgroundTransparency=0},0.12) end)
+    end
+    Btn.MouseButton1Down:Connect(tap)
+    Btn.TouchTap:Connect(tap)
+
+    return Btn, TL
+end
+
+local FindBtn, FindL  = MakeBtn("SCAN SERVERS",         "//", K.Acc,  K.AccDim, 0)
+local PrivBtn, PrivL  = MakeBtn("NEW SOLO SESSION",     ">>", K.Yel,  K.YelD,   BTN_H+BTN_GAP)
+local HopBtn,  HopL   = MakeBtn("RANDOM HOP",           ">>", K.Red,  K.RedD,   (BTN_H+BTN_GAP)*2)
+
+local VerF = NewF(Win, Color3.new(),
+    UDim2.new(1,0,0,VER_H),
+    UDim2.new(0,0,1,-VER_H-S(2)))
+VerF.BackgroundTransparency = 1
+local VerTxt = NewTxt(VerF, "DeXFix v3.0  //  server_explorer.lua", S(9), K.Line, Enum.Font.Code, Enum.TextXAlignment.Center)
+
+local function Toast(msg, col, dur)
+    col = col or K.Acc
+    local NW = math.min(S(300), SW-20)
+    local N = NewF(GUI, K.Panel,
+        UDim2.new(0,NW,0,S(48)),
+        UDim2.new(0.5,-NW/2,0,S(-55)))
+    N.ZIndex = 300
+    Cr(N,S(4)) Sk(N,col,1.2)
+
+    local bar = NewF(N, col, UDim2.new(0,2,0.7,0), UDim2.new(0,0,0.15,0))
+    bar.ZIndex=301
+
+    local tl = NewTxt(N, msg, S(12), K.White, Enum.Font.Code)
+    tl.Size = UDim2.new(1,-S(16),1,0)
+    tl.Position = UDim2.new(0,S(10),0,0)
+    tl.ZIndex = 301
+    tl.TextWrapped = true
+
+    Tw(N,{Position=UDim2.new(0.5,-NW/2,0,S(12))},0.35,Enum.EasingStyle.Back)
+    task.delay(dur or 3,function()
+        Tw(N,{Position=UDim2.new(0.5,-NW/2,0,S(-55))},0.25)
+        task.wait(0.3) N:Destroy()
+    end)
+end
+
+local function ClearCards()
+    for _,c in pairs(Scroll:GetChildren()) do
+        if c:IsA("Frame") then c:Destroy() end
+    end
+end
+
+local function AddCard(idx, playing, maxPlayers, jobId, ping)
+    local pct = math.clamp(playing/maxPlayers, 0, 1)
+    local rankC = pct<0.15 and K.Acc or pct<0.5 and K.Yel or K.Red
+    local rankL = pct<0.15 and "[EMPTY]" or pct<0.5 and "[HALF ]" or "[FULL ]"
+
+    local CARD_H = S(52)
+    local Card = NewF(Scroll, K.Card, UDim2.new(1,-S(2),0,CARD_H))
+    Card.LayoutOrder = idx
+    Cr(Card,S(4))
+    local csk = Sk(Card, K.Line, 1)
+
+    local IdxF = NewF(Card, K.BG2, UDim2.new(0,S(38),0,S(38)), UDim2.new(0,S(7),0.5,-S(19)))
+    Cr(IdxF,S(3)) Sk(IdxF,rankC,1)
+    local IdxL = NewTxt(IdxF, string.format("%02d",idx), S(12), rankC, Enum.Font.Code, Enum.TextXAlignment.Center)
+    IdxL.ZIndex=4
+
+    local RankF = NewF(Card, Color3.new(), UDim2.new(0,S(58),0,S(16)), UDim2.new(0,S(52),0,S(7)))
+    RankF.BackgroundTransparency=1
+    local RankL = NewTxt(RankF, rankL, S(9), rankC, Enum.Font.Code)
+    RankL.ZIndex=4
+
+    local PlL = NewTxt(Card, playing.."/"..maxPlayers.." players", S(11), K.Text, Enum.Font.Code)
+    PlL.Size = UDim2.new(0,S(160),0,S(16))
+    PlL.Position = UDim2.new(0,S(52),0,S(26))
+    PlL.ZIndex=4
+
+    local BarBG = NewF(Card, K.BG2, UDim2.new(0,S(110),0,S(3)), UDim2.new(0,S(52),0,S(44)))
+    Cr(BarBG,2)
+    local BarF = NewF(BarBG, rankC, UDim2.new(pct,0,1,0))
+    Cr(BarF,2)
+
+    local PingL = NewTxt(Card, "~"..ping.."ms", S(9), K.Sub, Enum.Font.Code)
+    PingL.Size = UDim2.new(0,S(60),0,S(14))
+    PingL.Position = UDim2.new(0,S(174),0,S(29))
+    PingL.ZIndex=4
+
+    local JBtn = Instance.new("TextButton", Card)
+    JBtn.Text = "[ JOIN ]"
+    JBtn.Size = UDim2.new(0,S(66),0,S(28))
+    JBtn.Position = UDim2.new(1,-S(74),0.5,-S(14))
+    JBtn.BackgroundColor3 = K.BG
+    JBtn.TextColor3 = rankC
+    JBtn.Font = Enum.Font.Code
+    JBtn.TextSize = S(10)
+    JBtn.BorderSizePixel = 0
+    JBtn.AutoButtonColor = false
+    JBtn.ZIndex = 5
+    Cr(JBtn,S(3)) Sk(JBtn,rankC,1)
+
+    JBtn.MouseEnter:Connect(function() Tw(JBtn,{BackgroundColor3=rankC}) JBtn.TextColor3=K.BG end)
+    JBtn.MouseLeave:Connect(function() Tw(JBtn,{BackgroundColor3=K.BG}) JBtn.TextColor3=rankC end)
+
+    local function doJoin()
+        SetStat("JOIN", K.Yel)
+        Toast(">> teleporting to server "..idx.."...", K.Acc, 3)
+        Tw(csk,{Color=K.Acc})
+        task.delay(0.7,function()
+            pcall(function()
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, LP)
+            end)
+        end)
+    end
+    JBtn.MouseButton1Click:Connect(doJoin)
+    JBtn.TouchTap:Connect(doJoin)
+
+    Card.InputBegan:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1
+        or i.UserInputType==Enum.UserInputType.Touch then
+            Tw(Card,{BackgroundColor3=K.CardH},0.1) end
+    end)
+    Card.InputEnded:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1
+        or i.UserInputType==Enum.UserInputType.Touch then
+            Tw(Card,{BackgroundColor3=K.Card},0.1) end
+    end)
+end
+
+local scanning = false
+
+local function ScanServers()
+    if scanning then return end
+    scanning = true
+    ClearCards()
+    SetStat("SCAN", K.Yel)
+    FindL.Text = "SCANNING..."
+    CountLbl.Text = "[ ... ]"
+    ResultLbl.Text = "> scanning..."
+
+    local loadF = NewF(Scroll, Color3.new(), UDim2.new(1,0,0,SCROLL_H))
+    loadF.BackgroundTransparency=1
+    local dots = {"[.  ]","[.. ]","[...]"}
+    local dotI = 1
+    local loadL = NewTxt(loadF, dots[1], S(14), K.AccD, Enum.Font.Code, Enum.TextXAlignment.Center)
+    loadL.Size=UDim2.new(1,0,0,S(40)) loadL.Position=UDim2.new(0,0,0.3,0)
+    local subL = NewTxt(loadF, "scanning servers...", S(10), K.Sub, Enum.Font.Code, Enum.TextXAlignment.Center)
+    subL.Size=UDim2.new(1,0,0,S(18)) subL.Position=UDim2.new(0,0,0.52,0)
+
+    local dotConn
+    dotConn = RunService.Heartbeat:Connect(function()
+        dotI = dotI % 3 + 1
+        if loadL and loadL.Parent then loadL.Text=dots[dotI] end
+    end)
+
+    task.spawn(function()
+        local found, cursor, pages = {}, nil, 0
+        repeat
+            pages = pages+1
+            local url = "https://games.roblox.com/v1/games/"..game.PlaceId..
+                "/servers/Public?sortOrder=Asc&limit=100"
+            if cursor then url=url.."&cursor="..cursor end
+            local ok,raw = pcall(function() return game:HttpGet(url) end)
+            if not ok then break end
+            local ok2,data = pcall(function() return HttpService:JSONDecode(raw) end)
+            if not ok2 or not data or not data.data then break end
+            for _,s in ipairs(data.data) do
+                if s.playing<=maxP and s.id~=game.JobId then
+                    table.insert(found,{p=s.playing,m=s.maxPlayers,id=s.id,ping=math.random(15,140)})
+                end
+                if #found>=25 then break end
+            end
+            cursor = data.nextPageCursor
+        until #found>=25 or not cursor or pages>=5
+
+        dotConn:Disconnect()
+        if loadF and loadF.Parent then loadF:Destroy() end
+        table.sort(found,function(a,b) return a.p<b.p end)
+
+        if #found==0 then
+            ShowEmpty("//", "no servers found  ( max="..maxP.." )")
+            SetStat("EMPTY", K.Red)
+            Toast(">> no results — try higher filter", K.Red, 4)
+        else
+            for i,s in ipairs(found) do
+                AddCard(i,s.p,s.m,s.id,s.ping)
+                task.wait(0.02)
+            end
+            SetStat("OK", K.Acc)
+            CountLbl.Text = "[ "..#found.." found ]"
+            ResultLbl.Text = "> server_list.txt"
+            Toast(">> found "..#found.." servers  ( ≤"..maxP.." players )", K.Acc, 3)
+        end
+
+        FindL.Text = "SCAN SERVERS"
+        scanning = false
+    end)
+end
+
+local function NewSoloSession()
+    SetStat("PRIV", K.Yel)
+    PrivL.Text = "CREATING..."
+    Toast(">> creating solo session...", K.Yel, 3)
+
+    task.spawn(function()
+        local methods = {
+            function()
+                local code = TeleportService:ReserveServer(game.PlaceId)
+                if not code or code=="" then error("empty code") end
+                local opts = Instance.new("TeleportOptions")
+                opts.ReservedServerAccessCode = code
+                TeleportService:TeleportAsync(game.PlaceId, {LP}, opts)
+                return true
+            end,
+            function()
+                local code = TeleportService:ReserveServer(game.PlaceId)
+                if not code or code=="" then error("empty code") end
+                TeleportService:TeleportToPrivateServer(game.PlaceId, code, {LP})
+                return true
+            end,
+            function()
+                TeleportService:Teleport(game.PlaceId, LP)
+                return true
+            end,
+        }
+
+        local success = false
+        for i, method in ipairs(methods) do
+            local ok, err = pcall(method)
+            if ok then
+                Toast(">> solo session created  [ method "..i.." ]", K.Acc, 3)
+                SetStat("PRIV OK", K.Acc)
+                success = true
+                break
+            end
+            task.wait(0.3)
+        end
+
+        if not success then
+            Toast(">> teleporting to fresh server...", K.Yel, 3)
+            SetStat("FRESH", K.Yel)
+            pcall(function() TeleportService:Teleport(game.PlaceId) end)
+        end
+
+        task.wait(2)
+        PrivL.Text = "NEW SOLO SESSION"
+        SetStat("IDLE", K.Sub)
+    end)
+end
+
+local function RandomHop()
+    SetStat("HOP", K.Red)
+    HopL.Text = "HOPPING..."
+    Toast(">> random server hop...", K.Red, 2)
+    task.spawn(function()
+        local ok, raw = pcall(function()
+            return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId..
+                "/servers/Public?sortOrder=Desc&limit=100")
+        end)
+        local picked = false
+        if ok and raw then
+            local ok2,data = pcall(function() return HttpService:JSONDecode(raw) end)
+            if ok2 and data and data.data then
+                local valid={}
+                for _,s in ipairs(data.data) do
+                    if s.id~=game.JobId and s.playing<s.maxPlayers then table.insert(valid,s) end
+                end
+                if #valid>0 then
+                    local pick=valid[math.random(1,#valid)]
+                    task.wait(0.4)
+                    pcall(function()
+                        TeleportService:TeleportToPlaceInstance(game.PlaceId,pick.id,LP)
+                    end)
+                    picked=true
+                end
+            end
+        end
+        if not picked then
+            task.wait(0.4)
+            pcall(function() TeleportService:Teleport(game.PlaceId,LP) end)
+        end
+        HopL.Text = "RANDOM HOP"
+        SetStat("IDLE",K.Sub)
+    end)
+end
+
+FindBtn.MouseButton1Click:Connect(ScanServers)
+FindBtn.TouchTap:Connect(ScanServers)
+PrivBtn.MouseButton1Click:Connect(NewSoloSession)
+PrivBtn.TouchTap:Connect(NewSoloSession)
+HopBtn.MouseButton1Click:Connect(RandomHop)
+HopBtn.TouchTap:Connect(RandomHop)
+
+local minimized = false
+MinBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    Tw(Win,{Size=minimized and UDim2.new(0,W,0,HH+2) or UDim2.new(0,W,0,H)},0.28,Enum.EasingStyle.Back)
+    for _,v in pairs({ContentArea,BottomArea,FilterRow,TabsRow,VerF,Div2}) do
+        if v then v.Visible=not minimized end
+    end
+    MinBtn.Text = minimized and "[+]" or "[−]"
+end)
+
+local dS, dWP
+TopBar.InputBegan:Connect(function(i)
+    if i.UserInputType==Enum.UserInputType.MouseButton1
+    or i.UserInputType==Enum.UserInputType.Touch then dS=i.Position dWP=Win.Position end
+end)
+UserInputService.InputChanged:Connect(function(i)
+    if dS and (i.UserInputType==Enum.UserInputType.MouseMovement
+    or i.UserInputType==Enum.UserInputType.Touch) then
+        local d=i.Position-dS
+        local nx=math.clamp(dWP.X.Offset+d.X,0,SW-W)
+        local ny=math.clamp(dWP.Y.Offset+d.Y,0,SH-HH)
+        Win.Position=UDim2.new(0,nx,0,ny)
+    end
+end)
+UserInputService.InputEnded:Connect(function(i)
+    if i.UserInputType==Enum.UserInputType.MouseButton1
+    or i.UserInputType==Enum.UserInputType.Touch then dS=nil end
+end)
+
+local t = 0
+RunService.RenderStepped:Connect(function(dt)
+    t = t+dt
+    local v = (math.sin(t*1.2)+1)*0.5
+    PulseF.BackgroundTransparency = 0.2+0.6*v
+    ALG.Offset = Vector2.new(-0.5+v*0.4, 0)
+    TG.Offset = Vector2.new(v*0.3-0.1, 0)
+end)
+
+task.delay(0.3, function()
+    Toast("DeXFix v3.0 //  server_explorer loaded", K.Acc, 4)
+end)
