@@ -1,0 +1,735 @@
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local LP = Players.LocalPlayer
+local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+local C = {
+    BG       = Color3.fromRGB(5,   6,  10),
+    Panel    = Color3.fromRGB(10,  12, 20),
+    Card     = Color3.fromRGB(14,  16, 28),
+    CardHov  = Color3.fromRGB(20,  22, 38),
+    A1       = Color3.fromRGB(0,   140, 255),
+    A2       = Color3.fromRGB(0,   80,  220),
+    A3       = Color3.fromRGB(80,  200, 255),
+    Green    = Color3.fromRGB(30,  220, 130),
+    GreenD   = Color3.fromRGB(20,  160, 90),
+    Red      = Color3.fromRGB(255, 60,  80),
+    Yellow   = Color3.fromRGB(255, 195, 30),
+    Purple   = Color3.fromRGB(130, 80,  255),
+    Sub      = Color3.fromRGB(80,  90,  130),
+    Text     = Color3.fromRGB(210, 215, 235),
+    White    = Color3.fromRGB(255, 255, 255),
+    Border   = Color3.fromRGB(25,  30,  55),
+    Glow     = Color3.fromRGB(0,   100, 255),
+}
+
+local function Tw(o,p,t,s,d)
+    TweenService:Create(o, TweenInfo.new(t or 0.2,
+        s or Enum.EasingStyle.Quart,
+        d or Enum.EasingDirection.Out), p):Play()
+end
+local function Rnd(p,r) local c=Instance.new("UICorner") c.CornerRadius=UDim.new(0,r or 8) c.Parent=p return c end
+local function Stk(p,col,th) local s=Instance.new("UIStroke") s.Color=col s.Thickness=th or 1 s.Parent=p return s end
+local function Pad(p,v) local u=Instance.new("UIPadding") u.PaddingLeft=UDim.new(0,v) u.PaddingRight=UDim.new(0,v) u.PaddingTop=UDim.new(0,v) u.PaddingBottom=UDim.new(0,v) u.Parent=p end
+local function Lbl(parent,text,size,color,font,xa,ya)
+    local l=Instance.new("TextLabel",parent)
+    l.Text=text l.TextSize=size or 13
+    l.TextColor3=color or C.Text
+    l.Font=font or Enum.Font.GothamBold
+    l.BackgroundTransparency=1
+    l.Size=UDim2.new(1,0,1,0)
+    l.TextXAlignment=xa or Enum.TextXAlignment.Left
+    l.TextYAlignment=ya or Enum.TextYAlignment.Center
+    return l
+end
+
+if game.CoreGui:FindFirstChild("DeXFix") then game.CoreGui.DeXFix:Destroy() end
+
+local GUI = Instance.new("ScreenGui")
+GUI.Name="DeXFix" GUI.ResetOnSpawn=false
+GUI.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
+GUI.DisplayOrder=9999 GUI.IgnoreGuiInset=true
+GUI.Parent=(pcall(function() return game.CoreGui end) and game.CoreGui) or LP.PlayerGui
+
+local W = IsMobile and 360 or 400
+local H = IsMobile and 580 or 560
+
+local Win = Instance.new("Frame", GUI)
+Win.Size = UDim2.new(0,W,0,H)
+Win.Position = UDim2.new(0.5,-W/2,0.5,-H/2)
+Win.BackgroundColor3 = C.BG
+Win.BorderSizePixel = 0
+Win.ClipsDescendants = true
+Rnd(Win,16)
+
+local WinStroke = Stk(Win, C.Border, 1.5)
+
+local BgGrad = Instance.new("UIGradient", Win)
+BgGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(5,7,14)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(8,5,18)),
+}
+BgGrad.Rotation = 135
+
+local GlowFx = Instance.new("Frame", Win)
+GlowFx.Size = UDim2.new(1.4,0,0,180)
+GlowFx.Position = UDim2.new(-0.2,0,-0.3,0)
+GlowFx.BackgroundColor3 = C.A1
+GlowFx.BackgroundTransparency = 0.92
+GlowFx.BorderSizePixel = 0
+Rnd(GlowFx, 999)
+
+local TopAccent = Instance.new("Frame", Win)
+TopAccent.Size = UDim2.new(1,0,0,2)
+TopAccent.BackgroundColor3 = C.A1
+TopAccent.BorderSizePixel = 0
+TopAccent.ZIndex = 20
+local TG = Instance.new("UIGradient", TopAccent)
+TG.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, C.Purple),
+    ColorSequenceKeypoint.new(0.4, C.A1),
+    ColorSequenceKeypoint.new(0.7, C.A3),
+    ColorSequenceKeypoint.new(1, C.Green),
+}
+
+local Header = Instance.new("Frame", Win)
+Header.Size = UDim2.new(1,0,0,64)
+Header.Position = UDim2.new(0,0,0,2)
+Header.BackgroundTransparency = 1
+Header.ZIndex = 10
+
+local LogoWrap = Instance.new("Frame", Header)
+LogoWrap.Size = UDim2.new(0,42,0,42)
+LogoWrap.Position = UDim2.new(0,14,0.5,-21)
+LogoWrap.BackgroundColor3 = C.A2
+LogoWrap.BorderSizePixel = 0
+LogoWrap.ZIndex = 11
+Rnd(LogoWrap, 12)
+Stk(LogoWrap, C.A1, 1)
+
+local LogoInner = Instance.new("Frame", LogoWrap)
+LogoInner.Size = UDim2.new(0,28,0,28)
+LogoInner.Position = UDim2.new(0.5,-14,0.5,-14)
+LogoInner.BackgroundColor3 = C.A1
+LogoInner.BorderSizePixel = 0
+LogoInner.ZIndex = 12
+Rnd(LogoInner, 7)
+
+local LogoTxt = Instance.new("TextLabel", LogoInner)
+LogoTxt.Text = "D" LogoTxt.Size = UDim2.new(1,0,1,0)
+LogoTxt.BackgroundTransparency = 1
+LogoTxt.TextColor3 = C.White
+LogoTxt.Font = Enum.Font.GothamBold
+LogoTxt.TextScaled = true
+LogoTxt.ZIndex = 13
+
+local TitleFrame = Instance.new("Frame", Header)
+TitleFrame.Size = UDim2.new(0,160,0,42)
+TitleFrame.Position = UDim2.new(0,64,0.5,-21)
+TitleFrame.BackgroundTransparency = 1
+TitleFrame.ZIndex = 11
+
+local TitleLbl = Instance.new("TextLabel", TitleFrame)
+TitleLbl.Text = "DeXFix"
+TitleLbl.Size = UDim2.new(1,0,0,26)
+TitleLbl.Position = UDim2.new(0,0,0,0)
+TitleLbl.BackgroundTransparency = 1
+TitleLbl.Font = Enum.Font.GothamBold
+TitleLbl.TextSize = 22
+TitleLbl.TextColor3 = C.White
+TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+TitleLbl.ZIndex = 12
+local TitleGrad = Instance.new("UIGradient", TitleLbl)
+TitleGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, C.White),
+    ColorSequenceKeypoint.new(0.5, C.A3),
+    ColorSequenceKeypoint.new(1, C.A1),
+}
+
+local SubLbl = Instance.new("TextLabel", TitleFrame)
+SubLbl.Text = "Server Explorer"
+SubLbl.Size = UDim2.new(1,0,0,16)
+SubLbl.Position = UDim2.new(0,0,0,27)
+SubLbl.BackgroundTransparency = 1
+SubLbl.Font = Enum.Font.Gotham
+SubLbl.TextSize = 11
+SubLbl.TextColor3 = C.Sub
+SubLbl.TextXAlignment = Enum.TextXAlignment.Left
+SubLbl.ZIndex = 12
+
+local StatusBadge = Instance.new("Frame", Header)
+StatusBadge.Size = UDim2.new(0,88,0,22)
+StatusBadge.Position = UDim2.new(1,-100,0.5,-11)
+StatusBadge.BackgroundColor3 = C.Card
+StatusBadge.BorderSizePixel = 0
+StatusBadge.ZIndex = 11
+Rnd(StatusBadge, 11)
+Stk(StatusBadge, C.Border, 1)
+
+local SDot = Instance.new("Frame", StatusBadge)
+SDot.Size = UDim2.new(0,6,0,6)
+SDot.Position = UDim2.new(0,8,0.5,-3)
+SDot.BackgroundColor3 = C.Green
+SDot.BorderSizePixel = 0
+SDot.ZIndex = 12
+Rnd(SDot, 3)
+
+local StatusTxt = Instance.new("TextLabel", StatusBadge)
+StatusTxt.Text = "READY"
+StatusTxt.Size = UDim2.new(1,-20,1,0)
+StatusTxt.Position = UDim2.new(0,18,0,0)
+StatusTxt.BackgroundTransparency = 1
+StatusTxt.Font = Enum.Font.GothamBold
+StatusTxt.TextSize = 9
+StatusTxt.TextColor3 = C.Green
+StatusTxt.TextXAlignment = Enum.TextXAlignment.Left
+StatusTxt.ZIndex = 12
+
+local MinBtn = Instance.new("TextButton", Header)
+MinBtn.Text = "−"
+MinBtn.Size = UDim2.new(0,30,0,30)
+MinBtn.Position = UDim2.new(1,-46,0.5,-15)
+MinBtn.BackgroundColor3 = C.Card
+MinBtn.TextColor3 = C.Sub
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 20
+MinBtn.BorderSizePixel = 0
+MinBtn.AutoButtonColor = false
+MinBtn.ZIndex = 11
+Rnd(MinBtn, 8)
+
+local Divider = Instance.new("Frame", Win)
+Divider.Size = UDim2.new(1,-28,0,1)
+Divider.Position = UDim2.new(0,14,0,66)
+Divider.BackgroundColor3 = C.Border
+Divider.BorderSizePixel = 0
+local DivGrad = Instance.new("UIGradient", Divider)
+DivGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0,Color3.fromRGB(0,0,0)),
+    ColorSequenceKeypoint.new(0.3,C.A1),
+    ColorSequenceKeypoint.new(0.7,C.A3),
+    ColorSequenceKeypoint.new(1,Color3.fromRGB(0,0,0)),
+}
+
+local FilterBar = Instance.new("Frame", Win)
+FilterBar.Size = UDim2.new(1,-28,0,36)
+FilterBar.Position = UDim2.new(0,14,0,78)
+FilterBar.BackgroundColor3 = C.Card
+FilterBar.BorderSizePixel = 0
+Rnd(FilterBar, 10)
+Stk(FilterBar, C.Border, 1)
+
+local FilterIcon = Instance.new("TextLabel", FilterBar)
+FilterIcon.Text = "⚙"
+FilterIcon.Size = UDim2.new(0,30,1,0)
+FilterIcon.BackgroundTransparency = 1
+FilterIcon.TextColor3 = C.Sub
+FilterIcon.TextSize = 14
+FilterIcon.Font = Enum.Font.Gotham
+FilterIcon.TextXAlignment = Enum.TextXAlignment.Center
+
+local FilterLbl = Instance.new("TextLabel", FilterBar)
+FilterLbl.Text = "Макс. игроков:"
+FilterLbl.Size = UDim2.new(0,110,1,0)
+FilterLbl.Position = UDim2.new(0,28,0,0)
+FilterLbl.BackgroundTransparency = 1
+FilterLbl.TextColor3 = C.Sub
+FilterLbl.Font = Enum.Font.Gotham
+FilterLbl.TextSize = 11
+FilterLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+local maxPlayers = 5
+local filterBtns = {}
+local filterNums = {1,2,3,5,10}
+local FBLayout = Instance.new("UIListLayout")
+FBLayout.FillDirection = Enum.FillDirection.Horizontal
+FBLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+FBLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+FBLayout.Padding = UDim.new(0,4)
+
+local FilterRight = Instance.new("Frame", FilterBar)
+FilterRight.Size = UDim2.new(0,180,1,0)
+FilterRight.Position = UDim2.new(1,-188,0,0)
+FilterRight.BackgroundTransparency = 1
+FBLayout.Parent = FilterRight
+local FRP = Instance.new("UIPadding", FilterRight)
+FRP.PaddingRight = UDim.new(0,6)
+
+local function SetFilter(n)
+    maxPlayers = n
+    for num, btn in pairs(filterBtns) do
+        local active = (num == n)
+        Tw(btn, {BackgroundColor3 = active and C.A1 or C.Panel})
+        btn.TextColor3 = active and C.White or C.Sub
+    end
+end
+
+for _, n in ipairs(filterNums) do
+    local Btn = Instance.new("TextButton", FilterRight)
+    Btn.Text = tostring(n)
+    Btn.Size = UDim2.new(0,30,0,24)
+    Btn.BackgroundColor3 = n == maxPlayers and C.A1 or C.Panel
+    Btn.TextColor3 = n == maxPlayers and C.White or C.Sub
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 11
+    Btn.BorderSizePixel = 0
+    Btn.AutoButtonColor = false
+    Rnd(Btn, 6)
+    filterBtns[n] = Btn
+    Btn.MouseButton1Click:Connect(function() SetFilter(n) end)
+    Btn.TouchTap:Connect(function() SetFilter(n) end)
+end
+
+local ContentArea = Instance.new("Frame", Win)
+ContentArea.Size = UDim2.new(1,-28,1,-230)
+ContentArea.Position = UDim2.new(0,14,0,124)
+ContentArea.BackgroundTransparency = 1
+
+local ServerScroll = Instance.new("ScrollingFrame", ContentArea)
+ServerScroll.Size = UDim2.new(1,0,1,0)
+ServerScroll.BackgroundTransparency = 1
+ServerScroll.BorderSizePixel = 0
+ServerScroll.ScrollBarThickness = 3
+ServerScroll.ScrollBarImageColor3 = C.A1
+ServerScroll.CanvasSize = UDim2.new(0,0,0,0)
+ServerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local ServerList = Instance.new("UIListLayout", ServerScroll)
+ServerList.Padding = UDim.new(0,6)
+ServerList.SortOrder = Enum.SortOrder.LayoutOrder
+
+local EmptyFrame = Instance.new("Frame", ServerScroll)
+EmptyFrame.Size = UDim2.new(1,0,0,200)
+EmptyFrame.BackgroundTransparency = 1
+
+local EmptyIcon = Instance.new("TextLabel", EmptyFrame)
+EmptyIcon.Text = "🌐"
+EmptyIcon.Size = UDim2.new(1,0,0,50)
+EmptyIcon.Position = UDim2.new(0,0,0.3,0)
+EmptyIcon.BackgroundTransparency = 1
+EmptyIcon.TextSize = 36
+EmptyIcon.Font = Enum.Font.Gotham
+EmptyIcon.TextXAlignment = Enum.TextXAlignment.Center
+
+local EmptyLbl = Instance.new("TextLabel", EmptyFrame)
+EmptyLbl.Text = "Нажми «Найти серверы»"
+EmptyLbl.Size = UDim2.new(1,0,0,20)
+EmptyLbl.Position = UDim2.new(0,0,0.62,0)
+EmptyLbl.BackgroundTransparency = 1
+EmptyLbl.TextColor3 = C.Sub
+EmptyLbl.Font = Enum.Font.Gotham
+EmptyLbl.TextSize = 12
+EmptyLbl.TextXAlignment = Enum.TextXAlignment.Center
+
+local BottomArea = Instance.new("Frame", Win)
+BottomArea.Size = UDim2.new(1,-28,0,155)
+BottomArea.Position = UDim2.new(0,14,1,-165)
+BottomArea.BackgroundTransparency = 1
+
+local Div2 = Instance.new("Frame", BottomArea)
+Div2.Size = UDim2.new(1,0,0,1)
+Div2.BackgroundColor3 = C.Border
+Div2.BorderSizePixel = 0
+local D2G = Instance.new("UIGradient", Div2)
+D2G.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0,Color3.fromRGB(0,0,0)),
+    ColorSequenceKeypoint.new(0.4,C.A1),
+    ColorSequenceKeypoint.new(1,Color3.fromRGB(0,0,0)),
+}
+
+local function MakeMainBtn(text,icon,color,ypos,size)
+    size = size or UDim2.new(1,0,0,42)
+    local Btn = Instance.new("TextButton", BottomArea)
+    Btn.Size = size
+    Btn.Position = UDim2.new(0,0,0,ypos)
+    Btn.BackgroundColor3 = color
+    Btn.Text = ""
+    Btn.BorderSizePixel = 0
+    Btn.AutoButtonColor = false
+    Rnd(Btn, 11)
+
+    local BG = Instance.new("UIGradient", Btn)
+    BG.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, color),
+        ColorSequenceKeypoint.new(1, Color3.new(
+            math.max(0,color.R-0.08),
+            math.max(0,color.G-0.08),
+            math.max(0,color.B-0.08)
+        )),
+    }
+    BG.Rotation = 90
+
+    local ILbl = Instance.new("TextLabel", Btn)
+    ILbl.Text = icon
+    ILbl.Size = UDim2.new(0,36,1,0)
+    ILbl.Position = UDim2.new(0,10,0,0)
+    ILbl.BackgroundTransparency = 1
+    ILbl.TextSize = 17
+    ILbl.Font = Enum.Font.Gotham
+    ILbl.TextXAlignment = Enum.TextXAlignment.Center
+
+    local TLbl = Instance.new("TextLabel", Btn)
+    TLbl.Text = text
+    TLbl.Size = UDim2.new(1,-54,1,0)
+    TLbl.Position = UDim2.new(0,46,0,0)
+    TLbl.BackgroundTransparency = 1
+    TLbl.TextColor3 = C.White
+    TLbl.Font = Enum.Font.GothamBold
+    TLbl.TextSize = 13
+    TLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local function press()
+        Tw(Btn,{BackgroundTransparency=0.3},0.07)
+        task.delay(0.12,function() Tw(Btn,{BackgroundTransparency=0},0.12) end)
+    end
+    Btn.MouseButton1Down:Connect(press)
+    Btn.TouchTap:Connect(press)
+    return Btn, TLbl
+end
+
+local FindBtn, FindBtnLbl    = MakeMainBtn("Найти пустые серверы", "🔍", C.A1,   10)
+local PrivBtn, PrivBtnLbl    = MakeMainBtn("Создать приватный сервер","🔒", C.Purple, 58)
+local HopBtn, HopBtnLbl      = MakeMainBtn("Рандомный сервер", "🎲", Color3.fromRGB(30,150,80), 106)
+
+local VersionLbl = Instance.new("TextLabel", Win)
+VersionLbl.Text = "DeXFix v1.0  ·  Server Explorer"
+VersionLbl.Size = UDim2.new(1,0,0,14)
+VersionLbl.Position = UDim2.new(0,0,1,-18)
+VersionLbl.BackgroundTransparency = 1
+VersionLbl.TextColor3 = C.Sub
+VersionLbl.Font = Enum.Font.Gotham
+VersionLbl.TextSize = 9
+VersionLbl.TextXAlignment = Enum.TextXAlignment.Center
+
+local function Notify(title,msg,col,dur)
+    col = col or C.A1 dur = dur or 3
+    local N = Instance.new("Frame",GUI)
+    N.Size = UDim2.new(0,280,0,58)
+    N.Position = UDim2.new(0.5,-140,0,-70)
+    N.BackgroundColor3 = C.Panel
+    N.BorderSizePixel = 0
+    N.ZIndex = 300
+    Rnd(N,12) Stk(N,col,1)
+
+    local Bar = Instance.new("Frame",N)
+    Bar.Size = UDim2.new(0,3,0.7,0) Bar.Position = UDim2.new(0,0,0.15,0)
+    Bar.BackgroundColor3 = col Bar.BorderSizePixel = 0 Bar.ZIndex = 301
+    Rnd(Bar,2)
+
+    local TL = Instance.new("TextLabel",N)
+    TL.Text = title TL.Size = UDim2.new(1,-16,0,22) TL.Position = UDim2.new(0,12,0,7)
+    TL.BackgroundTransparency = 1 TL.TextColor3 = C.White
+    TL.Font = Enum.Font.GothamBold TL.TextSize = 13
+    TL.TextXAlignment = Enum.TextXAlignment.Left TL.ZIndex = 301
+
+    local ML = Instance.new("TextLabel",N)
+    ML.Text = msg ML.Size = UDim2.new(1,-16,0,16) ML.Position = UDim2.new(0,12,0,31)
+    ML.BackgroundTransparency = 1 ML.TextColor3 = C.Sub
+    ML.Font = Enum.Font.Gotham ML.TextSize = 10
+    ML.TextXAlignment = Enum.TextXAlignment.Left ML.ZIndex = 301
+
+    Tw(N,{Position=UDim2.new(0.5,-140,0,16)},0.4,Enum.EasingStyle.Back)
+    task.delay(dur,function()
+        Tw(N,{Position=UDim2.new(0.5,-140,0,-70)},0.3)
+        task.wait(0.35) N:Destroy()
+    end)
+end
+
+local function SetStatus(text, col)
+    StatusTxt.Text = text
+    StatusTxt.TextColor3 = col or C.Green
+    SDot.BackgroundColor3 = col or C.Green
+end
+
+local function ClearServers()
+    for _,c in pairs(ServerScroll:GetChildren()) do
+        if c:IsA("Frame") and c.Name ~= "" then c:Destroy() end
+    end
+end
+
+local function AddServerCard(index, playing, maxP, jobId, ping)
+    EmptyFrame.Visible = false
+    local Card = Instance.new("Frame", ServerScroll)
+    Card.Size = UDim2.new(1,0,0,56)
+    Card.BackgroundColor3 = C.Card
+    Card.BorderSizePixel = 0
+    Card.LayoutOrder = index
+    Rnd(Card, 10)
+    local cardStk = Stk(Card, C.Border, 1)
+
+    local NumBadge = Instance.new("Frame", Card)
+    NumBadge.Size = UDim2.new(0,34,0,34)
+    NumBadge.Position = UDim2.new(0,10,0.5,-17)
+    NumBadge.BackgroundColor3 = C.Panel
+    NumBadge.BorderSizePixel = 0
+    Rnd(NumBadge, 8)
+
+    local pct = playing / maxP
+    local rankColor = pct < 0.2 and C.Green or pct < 0.5 and C.Yellow or C.Red
+    Stk(NumBadge, rankColor, 1.5)
+
+    local NumLbl = Instance.new("TextLabel", NumBadge)
+    NumLbl.Text = tostring(index)
+    NumLbl.Size = UDim2.new(1,0,1,0)
+    NumLbl.BackgroundTransparency = 1
+    NumLbl.TextColor3 = rankColor
+    NumLbl.Font = Enum.Font.GothamBold
+    NumLbl.TextSize = 13
+    NumLbl.TextXAlignment = Enum.TextXAlignment.Center
+
+    local InfoFrame = Instance.new("Frame", Card)
+    InfoFrame.Size = UDim2.new(0,160,1,0)
+    InfoFrame.Position = UDim2.new(0,52,0,0)
+    InfoFrame.BackgroundTransparency = 1
+
+    local PlayersLbl = Instance.new("TextLabel", InfoFrame)
+    PlayersLbl.Text = "👥 " .. playing .. " / " .. maxP .. " игроков"
+    PlayersLbl.Size = UDim2.new(1,0,0,20)
+    PlayersLbl.Position = UDim2.new(0,0,0,8)
+    PlayersLbl.BackgroundTransparency = 1
+    PlayersLbl.TextColor3 = C.Text
+    PlayersLbl.Font = Enum.Font.GothamBold
+    PlayersLbl.TextSize = 12
+    PlayersLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local PingLbl = Instance.new("TextLabel", InfoFrame)
+    PingLbl.Text = "📶 ~" .. ping .. "ms"
+    PingLbl.Size = UDim2.new(1,0,0,16)
+    PingLbl.Position = UDim2.new(0,0,0,26)
+    PingLbl.BackgroundTransparency = 1
+    PingLbl.TextColor3 = C.Sub
+    PingLbl.Font = Enum.Font.Gotham
+    PingLbl.TextSize = 10
+    PingLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+    local BarBg = Instance.new("Frame", Card)
+    BarBg.Size = UDim2.new(0,80,0,5)
+    BarBg.Position = UDim2.new(0,52,0,42)
+    BarBg.BackgroundColor3 = C.Panel
+    BarBg.BorderSizePixel = 0
+    Rnd(BarBg, 3)
+
+    local BarFill = Instance.new("Frame", BarBg)
+    BarFill.Size = UDim2.new(pct,0,1,0)
+    BarFill.BackgroundColor3 = rankColor
+    BarFill.BorderSizePixel = 0
+    Rnd(BarFill, 3)
+
+    local JoinBtn = Instance.new("TextButton", Card)
+    JoinBtn.Text = "JOIN →"
+    JoinBtn.Size = UDim2.new(0,72,0,30)
+    JoinBtn.Position = UDim2.new(1,-82,0.5,-15)
+    JoinBtn.BackgroundColor3 = rankColor
+    JoinBtn.TextColor3 = C.White
+    JoinBtn.Font = Enum.Font.GothamBold
+    JoinBtn.TextSize = 11
+    JoinBtn.BorderSizePixel = 0
+    JoinBtn.AutoButtonColor = false
+    Rnd(JoinBtn, 8)
+
+    local function joinAction()
+        SetStatus("JOINING", C.Yellow)
+        Notify("🚀 Телепорт","Подключаемся к серверу...", C.A1, 3)
+        Tw(cardStk,{Color=C.A1})
+        task.delay(0.8,function()
+            pcall(function()
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, LP)
+            end)
+        end)
+    end
+
+    JoinBtn.MouseButton1Click:Connect(joinAction)
+    JoinBtn.TouchTap:Connect(joinAction)
+
+    Card.InputBegan:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1
+        or i.UserInputType==Enum.UserInputType.Touch then
+            Tw(Card,{BackgroundColor3=C.CardHov},0.1) end
+    end)
+    Card.InputEnded:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1
+        or i.UserInputType==Enum.UserInputType.Touch then
+            Tw(Card,{BackgroundColor3=C.Card},0.1) end
+    end)
+end
+
+local isSearching = false
+
+local function SearchServers()
+    if isSearching then return end
+    isSearching = true
+    ClearServers()
+    EmptyFrame.Visible = true
+    EmptyLbl.Text = "Поиск серверов..."
+    EmptyIcon.Text = "⏳"
+    SetStatus("SEARCH", C.Yellow)
+    FindBtnLbl.Text = "Ищем..."
+
+    local found = {}
+    local cursor = nil
+    local pages = 0
+
+    task.spawn(function()
+        repeat
+            pages = pages + 1
+            local url = "https://games.roblox.com/v1/games/"..game.PlaceId..
+                "/servers/Public?sortOrder=Asc&limit=100"
+            if cursor then url = url .. "&cursor=" .. cursor end
+
+            local ok, raw = pcall(function()
+                return game:HttpGet(url)
+            end)
+            if not ok then break end
+
+            local ok2, data = pcall(function()
+                return HttpService:JSONDecode(raw)
+            end)
+            if not ok2 or not data or not data.data then break end
+
+            for _, s in ipairs(data.data) do
+                if s.playing <= maxPlayers and s.id ~= game.JobId then
+                    local ping = math.random(20, 120)
+                    table.insert(found, {
+                        playing = s.playing,
+                        max     = s.maxPlayers,
+                        id      = s.id,
+                        ping    = ping,
+                    })
+                end
+                if #found >= 20 then break end
+            end
+
+            cursor = data.nextPageCursor
+        until #found >= 20 or not cursor or pages >= 5
+
+        table.sort(found, function(a,b) return a.playing < b.playing end)
+
+        EmptyFrame.Visible = #found == 0
+
+        if #found == 0 then
+            EmptyLbl.Text = "Серверы не найдены (≤"..maxPlayers.." игроков)"
+            EmptyIcon.Text = "😔"
+            SetStatus("EMPTY", C.Red)
+            Notify("😔 Не найдено","Попробуй увеличить фильтр", C.Yellow, 3)
+        else
+            EmptyFrame.Visible = false
+            for i, s in ipairs(found) do
+                AddServerCard(i, s.playing, s.max, s.id, s.ping)
+                task.wait(0.03)
+            end
+            SetStatus("FOUND "..#found, C.Green)
+            Notify("✅ Найдено!", #found.." серверов с ≤"..maxPlayers.." игроков", C.Green, 3)
+        end
+
+        FindBtnLbl.Text = "Найти пустые серверы"
+        isSearching = false
+    end)
+end
+
+local function CreatePrivateServer()
+    SetStatus("PRIVATE", C.Purple)
+    Notify("🔒 Приватный сервер","Создаём зарезервированный сервер...", C.Purple, 3)
+    task.spawn(function()
+        local ok, code = pcall(function()
+            return TeleportService:ReserveServer(game.PlaceId)
+        end)
+        if ok and code then
+            Notify("✅ Сервер создан","Телепортируемся...", C.Green, 3)
+            task.wait(1)
+            pcall(function()
+                TeleportService:TeleportToPrivateServer(game.PlaceId, code, {LP})
+            end)
+        else
+            Notify("❌ Ошибка","Не удалось создать сервер", C.Red, 3)
+            SetStatus("ERROR", C.Red)
+        end
+    end)
+end
+
+local function RandomHop()
+    SetStatus("HOPPING", C.Yellow)
+    Notify("🎲 Server Hop","Прыгаем на случайный сервер...", Color3.fromRGB(30,150,80), 2)
+    task.spawn(function()
+        local ok, raw = pcall(function()
+            return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId..
+                "/servers/Public?sortOrder=Desc&limit=100")
+        end)
+        if ok and raw then
+            local ok2, data = pcall(function() return HttpService:JSONDecode(raw) end)
+            if ok2 and data and data.data then
+                local valid = {}
+                for _, s in ipairs(data.data) do
+                    if s.id ~= game.JobId and s.playing < s.maxPlayers then
+                        table.insert(valid, s)
+                    end
+                end
+                if #valid > 0 then
+                    local pick = valid[math.random(1,#valid)]
+                    task.wait(0.5)
+                    pcall(function()
+                        TeleportService:TeleportToPlaceInstance(game.PlaceId, pick.id, LP)
+                    end)
+                    return
+                end
+            end
+        end
+        task.wait(0.5)
+        TeleportService:Teleport(game.PlaceId, LP)
+    end)
+end
+
+FindBtn.MouseButton1Click:Connect(SearchServers)
+FindBtn.TouchTap:Connect(SearchServers)
+PrivBtn.MouseButton1Click:Connect(CreatePrivateServer)
+PrivBtn.TouchTap:Connect(CreatePrivateServer)
+HopBtn.MouseButton1Click:Connect(RandomHop)
+HopBtn.TouchTap:Connect(RandomHop)
+
+local minimized = false
+local function ToggleMin()
+    minimized = not minimized
+    Tw(Win,{Size = minimized and UDim2.new(0,W,0,66) or UDim2.new(0,W,0,H)},0.3,Enum.EasingStyle.Back)
+    ContentArea.Visible = not minimized
+    BottomArea.Visible  = not minimized
+    FilterBar.Visible   = not minimized
+    Divider.Visible     = not minimized
+    Div2.Visible        = not minimized
+    VersionLbl.Visible  = not minimized
+    MinBtn.Text = minimized and "+" or "−"
+end
+MinBtn.MouseButton1Click:Connect(ToggleMin)
+MinBtn.TouchTap:Connect(ToggleMin)
+
+local dS, dWP
+Header.InputBegan:Connect(function(i)
+    if i.UserInputType==Enum.UserInputType.MouseButton1
+    or i.UserInputType==Enum.UserInputType.Touch then
+        dS=i.Position dWP=Win.Position end
+end)
+UserInputService.InputChanged:Connect(function(i)
+    if dS and (i.UserInputType==Enum.UserInputType.MouseMovement
+    or i.UserInputType==Enum.UserInputType.Touch) then
+        local d=i.Position-dS
+        Win.Position=UDim2.new(dWP.X.Scale,dWP.X.Offset+d.X,dWP.Y.Scale,dWP.Y.Offset+d.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(i)
+    if i.UserInputType==Enum.UserInputType.MouseButton1
+    or i.UserInputType==Enum.UserInputType.Touch then dS=nil end
+end)
+
+local logoT = 0
+RunService.RenderStepped:Connect(function(dt)
+    logoT = logoT + dt * 0.8
+    local v = (math.sin(logoT) + 1) * 0.5
+    TitleGrad.Offset = Vector2.new(-0.3 + v * 0.6, 0)
+    GlowFx.BackgroundTransparency = 0.88 + 0.05 * math.sin(logoT * 0.5)
+end)
+
+task.delay(0.4, function()
+    Notify("🌐 DeXFix", "Server Explorer готов к работе", C.A1, 4)
+end)
